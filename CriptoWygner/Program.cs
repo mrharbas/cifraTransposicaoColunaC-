@@ -14,7 +14,7 @@ namespace CriptoWygner
 
         private static string chave;
         private static char[] chaveOrdenada;
-        
+
         private static string texto;
         private static string textoSomenteLetras;
         private static string textoFinal;
@@ -27,6 +27,10 @@ namespace CriptoWygner
         private static List<string> linhas;
         private static List<string> colunas;
 
+        private static bool utilizarCaracteresEspeciaisNaChave;
+        private static List<char> caracteresPossiveisChave;
+        private static int maxCaracChave;
+
         static void Main(string[] args)
         {
             Cabecalho();
@@ -36,8 +40,15 @@ namespace CriptoWygner
                 bool escolhaValida = false;
 
                 Menu();
+                Console.Clear();
 
-                switch(escolha)
+                if (escolha != "0")
+                {
+                    UtilizaCaracteresEspeciais();
+                    caracteresPossiveisChave = ObterListaCaracteresPossiveisChave();
+                }
+
+                switch (escolha)
                 {
                     case "0":
                         escolhaValida = true;
@@ -50,6 +61,9 @@ namespace CriptoWygner
                     case "2":
                         escolhaValida = true;
                         LerChave();
+                        break;
+                    case "3":
+                        Console.WriteLine($"\n\tCaracteres Possíveis: {new string(caracteresPossiveisChave.ToArray())}");
                         break;
                     default:
                         Console.WriteLine("\n\tOpção Inválida. Escolha uma das opções do Menu:");
@@ -85,23 +99,48 @@ namespace CriptoWygner
             Console.WriteLine("\n\tEscolha uma opção:");
             Console.WriteLine("\t1 - Gerar Chave Aleatoriamente;");
             Console.WriteLine("\t2 - Digitar Chave;");
+            Console.WriteLine("\t3 - Ver Lista dos Cacacteres Possíveis;");
             Console.WriteLine("\t0 - Sair.");
             Console.Write("\n\tOPÇÃO: ");
 
             escolha = Console.ReadLine();
         }
 
+        static void UtilizaCaracteresEspeciais()
+        {
+            string opcao = "";
+
+            while (opcao.Trim().ToLower() != "s" && opcao.Trim().ToLower() != "n")
+            {
+                Console.Write("\n\tDeseja utilizar caracteres especiais na chave [s/n]?: ");
+                opcao = Console.ReadLine();
+
+                switch (opcao.Trim().ToLower())
+                {
+                    case "s":
+                        utilizarCaracteresEspeciaisNaChave = true;
+                        break;
+                    case "n":
+                        utilizarCaracteresEspeciaisNaChave = false;
+                        break;
+                    default:
+                        Console.WriteLine("\n\tOPÇÃO INVÁLIDA!");
+                        break;
+                }
+            }
+        }
+
         static void LerChave()
         {
             bool chaveValida = false;
 
-            while(!chaveValida)
+            while (!chaveValida)
             {
                 bool mensagemExibida = false;
                 Console.Write("\n\tDigite a Chave: ");
                 chave = Console.ReadLine();
 
-                chave = RegexApenasLetras(RemoverAcentos(chave.ToUpper()));
+                chave = ObtemApenasCaracteresPermitidos(RemoverAcentos(chave.ToUpper()));
 
                 // verifica se foi digitado algum caractere repetido
                 string temp = "";
@@ -139,7 +178,7 @@ namespace CriptoWygner
 
             while (!isNumber)
             {
-                Console.Write("\n\tDigite a quantidade de caracteres que a chave deve possuir (Max. 12): ");
+                Console.Write($"\n\tDigite a quantidade de caracteres que a chave deve possuir (Max. {maxCaracChave}): ");
                 output = Console.ReadLine();
 
                 try
@@ -148,12 +187,13 @@ namespace CriptoWygner
 
                     if (quantidadeCaracteresChave <= 0)
                         throw new Exception();
-                    else if (quantidadeCaracteresChave <= 12)
+                    else if (quantidadeCaracteresChave <= maxCaracChave)
                         isNumber = true;
                     else
-                        Console.WriteLine("\n\tVALOR EXCEDE TAMANHO MÁXIMO DE 12 CARACTERES.");
+                        Console.WriteLine($"\n\tVALOR EXCEDE TAMANHO MÁXIMO DE {maxCaracChave} CARACTERES.");
 
-                } catch { Console.WriteLine("\n\tVALOR INVÁLIDO!!!"); }
+                }
+                catch { Console.WriteLine("\n\tVALOR INVÁLIDO!!!"); }
             }
         }
 
@@ -167,7 +207,7 @@ namespace CriptoWygner
                 texto = Console.ReadLine();
             }
 
-            textoSomenteLetras = RegexApenasLetras(RemoverAcentos(texto.ToUpper()));
+            textoSomenteLetras = ObtemApenasCaracteresPermitidos(RemoverAcentos(texto.ToUpper()));
             GerarTextoFinal();
 
             Console.WriteLine($"\n\tTexto Digitado: {texto}");
@@ -247,21 +287,18 @@ namespace CriptoWygner
         private static string GerarStringAleatoria(int quantidadeCaracteres, bool chave)
         {
             string result = "";
-            int interacoes = 0;
+
+            List<char> caracPossiveis = new List<char>(caracteresPossiveisChave);
 
             while (result.Length < quantidadeCaracteres)
             {
-                interacoes++;
+                int randomIndex = new Random().Next(0, caracPossiveis.Count());
 
-                int val = new Random().Next(65, 90);
+                result += caracPossiveis[randomIndex];
 
-                char caractere = Convert.ToChar(val);
-
-                if (result.IndexOf(caractere) == -1)
-                    result += caractere;
+                caracPossiveis.Remove(caracPossiveis[randomIndex]);
             }
 
-            Console.Write($"\n\tQuantidade de Interações: {interacoes}");
             Console.WriteLine($"\n\t{(chave ? "Chave Gerada" : "Complemento Gerado")}: {result}");
 
             return result;
@@ -280,17 +317,34 @@ namespace CriptoWygner
             return sbReturn.ToString();
         }
 
-        private static string RegexApenasLetras(string str)
+        private static string ObtemApenasCaracteresPermitidos(string str)
         {
-            string regex = @"^[A-Z]";
-
             string retorno = "";
 
             foreach (char c in str)
-                if (Regex.Match(c.ToString(), regex).Success)
+                if (caracteresPossiveisChave.Contains(c))
                     retorno += c;
 
             return retorno;
+        }
+
+        private static List<char> ObterListaCaracteresPossiveisChave()
+        {
+            List<char> list = new List<char>();
+
+            if (utilizarCaracteresEspeciaisNaChave)
+            {
+                for (int i = 33; i <= 96; i++)
+                    list.Add(Convert.ToChar(i));
+                for (int i = 123; i <= 126; i++)
+                    list.Add(Convert.ToChar(i));
+            }
+            else
+                for (int i = 65; i <= 90; i++)
+                    list.Add(Convert.ToChar(i));
+
+            maxCaracChave = list.Count();
+            return list;
         }
     }
 }
