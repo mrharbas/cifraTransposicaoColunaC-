@@ -370,7 +370,7 @@ namespace CriptoWygner
             string retorno = "";
 
             foreach (char c in str)
-                if (caracteresPossiveisChave.Contains(c))
+                if (caracteresPossiveisComplemento.Contains(c))
                     retorno += c;
 
             return retorno;
