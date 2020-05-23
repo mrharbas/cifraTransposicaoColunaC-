@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -9,7 +10,7 @@ namespace CriptoWygner
 {
     class Program
     {
-        // variáveis globais
+        #region variáveis globais
         private static string escolha;
 
         private static string chave;
@@ -32,6 +33,7 @@ namespace CriptoWygner
         private static List<char> caracteresPossiveisChave;
         private static List<char> caracteresPossiveisComplemento;
         private static int maxCaracChave;
+        #endregion
 
         static void Main(string[] args)
         {
@@ -44,7 +46,7 @@ namespace CriptoWygner
                 Menu();
                 Console.Clear();
 
-                if (escolha != "0" && escolha != "4")
+                if (escolha == "1" || escolha == "2")
                 {
                     UtilizaCaracteresEspeciais();
                     caracteresPossiveisChave = ObterListaCaracteresPossiveisChave(utilizarCaracteresEspeciaisNaChave, true);
@@ -85,7 +87,6 @@ namespace CriptoWygner
 
                 if (escolhaValida)
                 {
-                    chaveOrdenada = chave.OrderBy(c => c).ToArray();
                     complementoTexto = GerarStringAleatoria(quantidadeCaracteresChave - 1, false);
 
                     LerTexto();
@@ -110,7 +111,7 @@ namespace CriptoWygner
             Console.WriteLine("\t1 - Gerar Chave Aleatoriamente;");
             Console.WriteLine("\t2 - Digitar Chave;");
             Console.WriteLine("\t3 - Ver Lista dos Cacacteres Possíveis;");
-            //Console.WriteLine("\t4 - Decifrar Texto;");
+            Console.WriteLine("\t4 - Decifrar Texto;");
             Console.WriteLine("\t0 - Sair.");
             Console.Write("\n\tOPÇÃO: ");
 
@@ -151,7 +152,7 @@ namespace CriptoWygner
                 Console.Write("\n\tDigite a Chave: ");
                 chave = Console.ReadLine();
 
-                chave = ObtemApenasCaracteresPermitidos(RemoverAcentos(chave.ToUpper()));
+                chave = ObtemApenasCaracteresPermitidos(RemoverAcentos(chave.ToUpper()), utilizarCaracteresEspeciaisNaChave);
 
                 // verifica se foi digitado algum caractere repetido
                 string temp = "";
@@ -167,7 +168,7 @@ namespace CriptoWygner
                     }
                 }
 
-                // se a varável temporária for igual à chave digitada é porque não houve caracteres duplicados
+                // se a variável temporária for igual à chave digitada é porque não houve caracteres duplicados
                 if (temp == chave)
                 {
                     if (temp.Length > 12)
@@ -176,6 +177,7 @@ namespace CriptoWygner
                     {
                         chaveValida = true;
                         quantidadeCaracteresChave = chave.Length;
+                        chaveOrdenada = chave.OrderBy(c => c).ToArray();
                         Console.WriteLine($"\n\tChave que será utilizada: {chave}");
                     }
                 }
@@ -218,7 +220,7 @@ namespace CriptoWygner
                 texto = Console.ReadLine();
             }
 
-            textoSomenteLetras = ObtemApenasCaracteresPermitidos(RemoverAcentos(texto.ToUpper()));
+            textoSomenteLetras = ObtemApenasCaracteresPermitidos(RemoverAcentos(texto.ToUpper()), false);
             GerarTextoFinal();
 
             Console.WriteLine($"\n\tTexto Digitado: {texto}");
@@ -270,20 +272,49 @@ namespace CriptoWygner
         {
             try
             {
+                string textoDecifrado = "";
                 string textoParaDecifrar = textoCifrado.Trim().Replace(" ", "");
 
                 int qtdLinhas = textoParaDecifrar.Length / quantidadeCaracteresChave;
 
                 List<string> linhaColuna = new List<string>();
-                List<string> colunas = new List<string>();
+                List<string> linhaColunaOrdenada = new List<string>();
+                List<string> linhasMatriz = new List<string>();
 
-                for (int i = 0; i < textoCifrado.Length; i += quantidadeCaracteresChave)
+                // Nesse primeiro Loop, separamos as linhas na ordem cifrada
+                for (int i = 0; i < textoParaDecifrar.Length; i += qtdLinhas)
                 {
-                    string temp = textoParaDecifrar.Substring(i, quantidadeCaracteresChave);
+                    string temp = textoParaDecifrar.Substring(i, qtdLinhas);
                     linhaColuna.Add(temp);
                 }
 
+                // Ordenamos na ordem da chave
+                for (int i = 0; i < quantidadeCaracteresChave; i++)
+                {
+                    char carac = chave[i];
+                    int index = Array.FindIndex(chaveOrdenada, row => row.Equals(carac));
 
+                    linhaColunaOrdenada.Add(linhaColuna[index]);
+                }
+
+                // Aqui, as linhas da matriz decifrada
+                for (int i = 0; i < qtdLinhas; i++)
+                {
+                    string linhaMatriz = "";
+                    
+                    foreach(var linhaOrdenada in linhaColunaOrdenada)
+                    {
+                        linhaMatriz += linhaOrdenada[i];
+                    }
+
+                    linhasMatriz.Add(linhaMatriz);
+                }
+
+                // Por fim, concatenamos o resultado decriptado
+                foreach (var item in linhasMatriz)
+                    textoDecifrado += item;
+
+                Console.WriteLine($"\n\tTexto Decifrado: {textoDecifrado}");
             }
             catch
             {
@@ -347,6 +378,9 @@ namespace CriptoWygner
                     caracPossiveis.Remove(caracPossiveis[randomIndex]);
             }
 
+            if (chave)
+                chaveOrdenada = result.OrderBy(c => c).ToArray();
+
             Console.WriteLine($"\n\t{(chave ? "Chave Gerada" : "Complemento Gerado")}: {result}");
 
             return result;
@@ -365,13 +399,15 @@ namespace CriptoWygner
             return sbReturn.ToString();
         }
 
-        private static string ObtemApenasCaracteresPermitidos(string str)
+        private static string ObtemApenasCaracteresPermitidos(string str, bool caracteresEspeciais)
         {
             string retorno = "";
 
             foreach (char c in str)
-                if (caracteresPossiveisComplemento.Contains(c))
+            {
+                if ((caracteresEspeciais && caracteresPossiveisChave.Contains(c)) || (!caracteresEspeciais && caracteresPossiveisComplemento.Contains(c)))
                     retorno += c;
+            }
 
             return retorno;
         }
