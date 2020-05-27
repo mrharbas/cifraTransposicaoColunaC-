@@ -171,15 +171,10 @@ namespace CriptoWygner
                 // se a variável temporária for igual à chave digitada é porque não houve caracteres duplicados
                 if (temp == chave)
                 {
-                    if (temp.Length > 12)
-                        Console.WriteLine("\n\tChave inválida! Máximo de 12 caracteres.");
-                    else
-                    {
-                        chaveValida = true;
-                        quantidadeCaracteresChave = chave.Length;
-                        chaveOrdenada = chave.OrderBy(c => c).ToArray();
-                        Console.WriteLine($"\n\tChave que será utilizada: {chave}");
-                    }
+                    chaveValida = true;
+                    quantidadeCaracteresChave = chave.Length;
+                    chaveOrdenada = chave.OrderBy(c => c).ToArray();
+                    Console.WriteLine($"\n\tChave que será utilizada: {chave}");
                 }
             }
         }
