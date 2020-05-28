@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -33,6 +34,8 @@ namespace CriptoWygner
         private static List<char> caracteresPossiveisChave;
         private static List<char> caracteresPossiveisComplemento;
         private static int maxCaracChave;
+
+        private static long tempoTranscorrido;
         #endregion
 
         static void Main(string[] args)
@@ -41,6 +44,7 @@ namespace CriptoWygner
 
             while (escolha != "0")
             {
+                tempoTranscorrido = 0;
                 bool escolhaValida = false;
 
                 Menu();
@@ -75,7 +79,14 @@ namespace CriptoWygner
                         caracteresPossiveisChave = ObterListaCaracteresPossiveisChave(true, true);
                         LerChave();
                         LerTextoCifrado();
+
+                        Stopwatch cronometro = new Stopwatch();
+                        cronometro.Start();
                         DecifrarTexto();
+                        cronometro.Stop();
+
+                        tempoTranscorrido = cronometro.ElapsedMilliseconds;
+                        Console.WriteLine($"\n\tTempo transcorrido para decriptar em milissegundos: {tempoTranscorrido}");
                         break;
                     default:
                         Console.WriteLine("\n\tOpção Inválida. Escolha uma das opções do Menu:");
@@ -90,12 +101,23 @@ namespace CriptoWygner
                     complementoTexto = GerarStringAleatoria(quantidadeCaracteresChave - 1, false);
 
                     LerTexto();
+
+                    Stopwatch cronometro1 = new Stopwatch();
+                    Stopwatch cronometro2 = new Stopwatch();
+
+                    cronometro1.Start();
                     GerarLinhas();
                     GerarColunas();
+                    cronometro1.Stop();
 
                     ExibirMatriz();
 
+                    cronometro2.Start();
                     ExibirResultado();
+                    cronometro2.Stop();
+
+                    tempoTranscorrido = cronometro1.ElapsedMilliseconds + cronometro2.ElapsedMilliseconds;
+                    Console.WriteLine($"\n\tTempo transcorrido para encriptar em milissegundos: {tempoTranscorrido}");
                 }
             }
         }
